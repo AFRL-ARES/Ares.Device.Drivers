@@ -1,0 +1,35 @@
+@using SpectralCameraRemastered.UI.Models
+@using SpectralCameraRemastered.Models
+@using Radzen
+@using Radzen.Blazor
+
+<RadzenCard class="h-100">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="m-0">Raman Spectrum</h5>
+        <RadzenToggleButton @bind-Value="@_autoScale" Text="Auto-scale Y" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" />
+    </div>
+
+    <RadzenChart Style="height: 400px;">
+        <RadzenLineSeries Data="@Data" CategoryProperty="X" ValueProperty="Y" Title="Intensity" 
+                          Stroke="yellow" StrokeWidth="1" Smooth="false" />
+        
+        @foreach (var peak in Peaks.Where(p => p.DrawOnMain))
+        {
+            @* Simplified Peak visualization as Radzen doesn't have native vertical markers easily in LineSeries without extra data points *@
+            @* We could add a few dummy points for each peak or use a different visualization approach *@
+        }
+
+        <RadzenCategoryAxis Title="Raman Shift (cm⁻¹)" />
+        <RadzenValueAxis Title="Counts">
+            <RadzenGridLines Visible="true" />
+        </RadzenValueAxis>
+        <RadzenLegend Visible="false" />
+    </RadzenChart>
+</RadzenCard>
+
+@code {
+    [Parameter] public List<RamanDataPoint> Data { get; set; } = new();
+    [Parameter] public List<CalibrationPeak> Peaks { get; set; } = new();
+
+    private bool _autoScale = true;
+}

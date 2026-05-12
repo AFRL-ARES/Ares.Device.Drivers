@@ -1,0 +1,42 @@
+# ARES Device Driver Manifest
+# Target: Newton Spectral Camera Remastered
+
+# Basic Metadata
+device_type_name: "Newton Spectral Camera"
+driver_id: "newton_spectral_camera_v1"
+connection_type: "USB"
+
+# The DLL that contains the SpectralCameraDevice and ViewModel classes
+assembly_name: "SpectralCameraRemastered.dll"
+
+# Settings required when adding the device through the ARES UI
+settings:
+  - key: "CCDWidth"
+    display_name: "CCD Width"
+    type: "number"
+    description: "Width of the CCD sensor in pixels."
+    default: 2048
+
+  - key: "CCDHeight"
+    display_name: "CCD Height"
+    type: "number"
+    description: "Height of the CCD sensor in pixels."
+    default: 512
+
+  - key: "CCDBinningHeight"
+    display_name: "Binning Height"
+    type: "number"
+    description: "Vertical binning height."
+    default: 15
+
+  - key: "CCDBinningCenter"
+    display_name: "Binning Center"
+    type: "number"
+    description: "Vertical binning center."
+    default: 256
+
+  - key: "TempSetPoint"
+    display_name: "Temperature Setpoint (°C)"
+    type: "number"
+    description: "Target temperature for the CCD cooler."
+    default: -40
