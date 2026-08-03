@@ -1,0 +1,23 @@
+# ARES Device Driver Manifest
+# Target: Steaming Serial Sensor
+
+# Basic Metadata
+device_type_name: "Delimited Stream Sensor"
+driver_id: "delimited_stream_sensor_v1"
+connection_type: "Serial"
+
+# The DLL that contains the MassFlowController and ViewModel classes
+assembly_name: "SerialStreamingSensor.dll"
+
+# Serial connection specifics (Parsed only if connection_type is "Serial")
+serial_settings:
+  variable_baud_rate: true
+  allowed_baud_rates: [9600, 19200, 38400, 57600, 115200]
+  default_baud_rate: 115200 # Keeps the UI friendly by pre-filling
+
+# Settings required when adding the device through the ARES UI
+settings:
+  - key: "DataFormat"
+    display_name: "Data Format"
+    type: "string"
+    description: "streaming data line format."

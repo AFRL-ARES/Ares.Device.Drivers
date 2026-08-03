@@ -1,0 +1,68 @@
+﻿.device-container {
+    display: grid;
+    grid-template:
+        "header"
+        "state"
+        / minmax(0, 1fr);
+    justify-content: center;
+}
+
+.title-row {
+    grid-area: header;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    padding: 8px 10px;
+    gap: 10px;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.device-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size:larger;
+}
+
+.device-state {
+    flex: 0 0 auto;
+}
+
+.status-connected {
+    background-color: #28a745;
+}
+
+.status-initializing {
+    background-color: #f0ad4e;
+}
+
+.status-error {
+    background-color: #dc3545;
+}
+
+.parameter-table {
+    grid-area: state;
+    width: 95%;
+    min-width: 0;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+
+.parameter-name {
+    min-width: 80px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: smaller;
+}
+
+.parameter-value {
+    width: 120px;
+    min-width: 90px;
+    white-space: nowrap;
+    font-size: smaller;
+}

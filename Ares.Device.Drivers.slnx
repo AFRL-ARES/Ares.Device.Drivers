@@ -4,6 +4,8 @@
   <Project Path="FlirCM3Remastered/FlirCM3Remastered.csproj" />
   <Project Path="HerkulexDRS/HerkulexDRS.csproj" />
   <Project Path="LindbergFurnaceRemastered/LindbergFurnaceRemastered.csproj" />
+  <Project Path="SerialStreamingSensor/SerialStreamingSensor.csproj" Id="7bb0c602-2d45-4c2b-8e65-d71edef5a57d" />
+  <Project Path="StreamHelper/StreamHelper.csproj" Id="1e8f4da1-e33f-4820-af52-278a4ba357f8" />
   <Project Path="SyringePumpNE1000Remastered/SyringePumpNE1000Remastered.csproj" />
   <Project Path="TC0304Remastered/TC0304Remastered.csproj" />
   <Project Path="TicStepperController/TicStepperController.csproj" />
