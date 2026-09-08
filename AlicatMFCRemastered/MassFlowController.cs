@@ -605,7 +605,13 @@ public class MassFlowController : AresDevice, IMassFlowController
 
   private async Task InitNormal()
   {
-    var dataFrameQuerySuccess = await QueryDataFrameFormat();
+        _logger.LogInformation($"### ALICAT MFC {Name}: Initializing. ###");
+
+        if (!_serialConnection.IsOpen) _serialConnection.AttemptOpen();
+        _logger.LogInformation($"### ALICAT MFC {Name}: Port verified open. ###");
+
+        _logger.LogInformation($"### ALICAT MFC {Name}: Querying data frames. ###");
+        var dataFrameQuerySuccess = await QueryDataFrameFormat();
     if(!dataFrameQuerySuccess)
     {
       _logger.LogError($"### ALICAT MFC {Name}: Failed to query the data frames. ###");
