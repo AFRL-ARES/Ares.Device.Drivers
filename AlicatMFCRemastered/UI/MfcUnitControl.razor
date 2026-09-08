@@ -37,7 +37,7 @@
       }
       <div></div>
 
-      <div class="field-descriptor">Mass Flow (SCCM)</div>
+      <div class="field-descriptor">Mass Flow</div>
       <div>@($"{ViewModel!.AlicatState.LiveData.MassFlow}")</div>
       <RadzenButton Text="Tare" ButtonStyle="ButtonStyle.Secondary" Size="ButtonSize.ExtraSmall" Click="@(() => ViewModel.TareFlowCommand.Execute().Subscribe())" />
       
@@ -48,7 +48,7 @@
         <div></div> 
       }
 
-      <div class="field-descriptor">Setpoint (SCCM)</div>
+      <div class="field-descriptor">Setpoint</div>
       <div>@($"{ViewModel!.AlicatState.LiveData.Setpoint}")</div>
       <div></div> <div class="field-descriptor">New Setpoint</div>
       <RadzenNumeric TValue="double?"

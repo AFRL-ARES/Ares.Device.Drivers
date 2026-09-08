@@ -18,7 +18,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Ares.Toolkit.Device" Version="1.5.0" />
-		<PackageReference Include="Ares.Toolkit.Serial" Version="1.0.0" />
+		<!--<PackageReference Include="Ares.Toolkit.Serial" Version="1.0.0" />-->
 		<PackageReference Include="ReactiveUI.SourceGenerators" Version="3.0.0">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -26,6 +26,11 @@
 		<PackageReference Include="System.Reactive" Version="6.1.0" />
 		<PackageReference Include="UnitsNet" Version="5.75.0" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="C:\Users\mahaw\source\repos\Ares.Toolkit.Serial\Ares.Toolkit.Serial\Ares.Toolkit.Serial.csproj" />
+	</ItemGroup>
+
 
 	<Target Name="PackageAresDriver" AfterTargets="Build">
 		<PropertyGroup>

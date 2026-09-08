@@ -25,7 +25,7 @@ namespace AlicatMFCRemastered;
 
 public class MassFlowController : AresDevice, IMassFlowController
 {
-  private readonly int _expectedDataFormatEntryCount;
+    private readonly int _expectedDataFormatEntryCount;
   private readonly BehaviorSubject<AresStruct> _stateSubject = new(new AresStruct());
   private CancellationTokenSource _stateGetterLoopTokenSource = new();
   private CompositeDisposable _stateWatchers = new();
@@ -170,9 +170,12 @@ public class MassFlowController : AresDevice, IMassFlowController
             _logger.LogWarning($"Failed to get max value for MFC {Name} as we couldn't get the numeric max value from model number {entry.Data}");
             return;
           }
-          var flowVal = StandardVolumeFlow.From(numericNum, unit);
-          dataFrameFormat.MaxVal = flowVal.StandardLitersPerMinute.ToString();
-        }
+          _logger.LogInformation($"Found a potential max value of {numericNum} {unit} for MFC {Name} from model number {entry.Data}");
+            var flowVal = StandardVolumeFlow.From(numericNum, unit);
+// must be converted to match setpoint units, otherwise may cause issues when calculating newsetpoint
+          // dataFrameFormat.MaxVal = flowVal.StandardLitersPerMinute.ToString();
+                    dataFrameFormat.MaxVal = flowVal.As((StandardVolumeFlowUnit)dataFrameFormat.Unit).ToString();
+                }
       }
     }
   }
@@ -461,9 +464,9 @@ public class MassFlowController : AresDevice, IMassFlowController
   public async Task NewSetpoint(StandardVolumeFlow setpoint)
   {
     if(_mfcType == MfcTypeEnum.Normal)
-    {
+    {          
       var newSetpointCommand = new NewSetpointCommand(AssumedId, setpoint, GetFormatEntries(), FirmwareVersion);
-      try
+            try
       {
         var response = await Send(newSetpointCommand, TimeSpan.FromSeconds(10));
       }
@@ -602,7 +605,13 @@ public class MassFlowController : AresDevice, IMassFlowController
 
   private async Task InitNormal()
   {
-    var dataFrameQuerySuccess = await QueryDataFrameFormat();
+        _logger.LogInformation($"### ALICAT MFC {Name}: Initializing. ###");
+
+        if (!_serialConnection.IsOpen) _serialConnection.AttemptOpen();
+        _logger.LogInformation($"### ALICAT MFC {Name}: Port verified open. ###");
+
+        _logger.LogInformation($"### ALICAT MFC {Name}: Querying data frames. ###");
+        var dataFrameQuerySuccess = await QueryDataFrameFormat();
     if(!dataFrameQuerySuccess)
     {
       _logger.LogError($"### ALICAT MFC {Name}: Failed to query the data frames. ###");
@@ -963,7 +972,8 @@ public class MassFlowController : AresDevice, IMassFlowController
           if(!setpointFound)
             return ArgumentError("NewSetpoint", "Setpoint", "number");
 
-          await NewSetpoint(StandardVolumeFlow.FromStandardCubicCentimetersPerMinute(setpoint));
+          _logger.LogInformation($"Attempting to set new setpoint for MFC {Name} to {setpoint} sccm");
+            await NewSetpoint(StandardVolumeFlow.FromStandardCubicCentimetersPerMinute(setpoint));
           break;
 
         case MassFlowControllerCommand.GetSetpoint:

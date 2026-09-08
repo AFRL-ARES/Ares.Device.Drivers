@@ -16,8 +16,10 @@ internal class MfcUnitParser
     // PSIA should just be absolute PSI, so I believe the unit can just be PSI
     mfcUnitCache.MapUnitToAbbreviation(PressureUnit.PoundForcePerSquareInch, "PSIA");
     mfcUnitCache.MapUnitToAbbreviation(VolumeFlowUnit.CubicCentimeterPerMinute, "CCM");
+    mfcUnitCache.MapUnitToAbbreviation(VolumeFlowUnit.LiterPerMinute, "LPM");
     mfcUnitCache.MapUnitToAbbreviation(StandardVolumeFlowUnit.StandardLiterPerMinute, "SLPM");
-    Parser = new MfcUnitParser(new UnitParser(mfcUnitCache));
+    mfcUnitCache.MapUnitToAbbreviation(StandardVolumeFlowUnit.StandardCubicCentimeterPerMinute, "SCCM");
+        Parser = new MfcUnitParser(new UnitParser(mfcUnitCache));
   }
 
   public MfcUnitParser(UnitParser parser)
