@@ -6,10 +6,9 @@ namespace AlicatMFCRemastered;
 
 public class MassFlowControllerConnection : AresHardwareConnection, IMfcConnection
 {
-    const string AlicatAsciiProtocol = "Alicat ASCII Protocol";
-    private readonly List<char> _unusedIds;
+  private readonly List<char> _unusedIds;
 
-  public MassFlowControllerConnection(string portName) : base(new SerialPortConnectionInfo(19200, Parity.None, 8, StopBits.One,AlicatAsciiProtocol), portName,
+  public MassFlowControllerConnection(string portName, string protocol) : base(new SerialPortConnectionInfo(19200, Parity.None, 8, StopBits.One, protocol), portName,
     new SerialConnectionOptions
     {
       SendBuffer = TimeSpan.FromMilliseconds(50),

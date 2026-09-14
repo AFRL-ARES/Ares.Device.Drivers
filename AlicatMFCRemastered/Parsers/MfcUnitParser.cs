@@ -19,7 +19,7 @@ internal class MfcUnitParser
     mfcUnitCache.MapUnitToAbbreviation(VolumeFlowUnit.LiterPerMinute, "LPM");
     mfcUnitCache.MapUnitToAbbreviation(StandardVolumeFlowUnit.StandardLiterPerMinute, "SLPM");
     mfcUnitCache.MapUnitToAbbreviation(StandardVolumeFlowUnit.StandardCubicCentimeterPerMinute, "SCCM");
-        Parser = new MfcUnitParser(new UnitParser(mfcUnitCache));
+    Parser = new MfcUnitParser(new UnitParser(mfcUnitCache));
   }
 
   public MfcUnitParser(UnitParser parser)
