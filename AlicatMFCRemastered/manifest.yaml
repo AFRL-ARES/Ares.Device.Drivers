@@ -17,6 +17,9 @@ serial_settings:
   variable_baud_rate: false
   allowed_baud_rates: [9600, 19200, 38400, 57600, 115200]
   default_baud_rate: 19200 # Keeps the UI friendly by pre-filling
+  variable_protocol: true
+  protocol_options: ["AlicatMFCProtocol", "AlicatModbusProtocol"]
+  default_protocol: "AlicatMFCProtocol"
 
 # Settings required when adding the device through the ARES UI
 settings:
