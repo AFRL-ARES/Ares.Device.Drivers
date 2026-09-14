@@ -11,6 +11,8 @@ serial_settings:
   variable_baud_rate: false
   allowed_baud_rates: [19200]
   default_baud_rate: 19200
+  variable_protocol: false
+  default_protocol: "SyringePumpNE1000Protocol"
 
 settings:
   - key: "Address"

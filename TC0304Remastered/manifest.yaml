@@ -11,6 +11,8 @@ serial_settings:
   variable_baud_rate: false
   allowed_baud_rates: [9600]
   default_baud_rate: 9600
+  variable_protocol: false
+  default_protocol: "TC0304Protocol"
 
 settings:
   - key: "Probe1Name"
