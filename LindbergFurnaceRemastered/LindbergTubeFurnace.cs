@@ -195,8 +195,11 @@ public class LindbergTubeFurnace : AresDevice
           break;
 
         case TubeFurnaceCommand.SetSetpoint:
-          if(GetArg(TubeFurnaceParameter.Setpoint) is not { HasNumberValue: true, NumberValue: var setpoint })
+          var param = GetArg(TubeFurnaceParameter.Setpoint);
+          if(param is null || !AresValueHelper.IsNumericType(param))
             return ArgumentError("SetSetpoint", "Setpoint", "number");
+
+          var found = param.TryGetNumericValue(out var setpoint);
           await SetSetpointInternal(setpoint);
           break;
 
@@ -257,16 +260,34 @@ public class LindbergTubeFurnace : AresDevice
   {
     var descriptors = new List<DeviceCommandDescriptor>
     {
-      new() { Name = TubeFurnaceCommand.GetSetpoint.ToString(), Description = "Gets the current setpoint from the furnace." },
-      new() { Name = TubeFurnaceCommand.SetSetpoint.ToString(), Description = "Sets a new target setpoint for the furnace.",
-              InputSchema = AresSchemaBuilder.Empty().AddEntry(TubeFurnaceParameter.Setpoint.ToString(), AresSchemaBuilder.NumberEntry().Build()).Build() },
-      new() { Name = TubeFurnaceCommand.GetCurrentTemperature.ToString(), Description = "Gets the current temperature from the furnace." },
-      new() { Name = TubeFurnaceCommand.SetAndWaitForSetpoint.ToString(), Description = "Sets a new setpoint and waits for the temperature to be within the given delta.",
-              InputSchema = AresSchemaBuilder.Empty()
-                .AddEntry(TubeFurnaceParameter.Setpoint.ToString(), AresSchemaBuilder.NumberEntry().Build())
-                .AddEntry(TubeFurnaceParameter.TemperatureDelta.ToString(), AresSchemaBuilder.NumberEntry().Build())
-                .AddEntry(TubeFurnaceParameter.Timeout.ToString(), AresSchemaBuilder.NumberEntry().Build())
-                .Build() }
+      new() 
+      { 
+        Name = TubeFurnaceCommand.GetSetpoint.ToString(), 
+        Description = "Gets the current setpoint from the furnace.",
+        OutputSchema = AresSchemaBuilder.FloatEntry().WithDescription("Current Setpoint of the Furnace").Build()
+      },
+      new() 
+      { 
+        Name = TubeFurnaceCommand.SetSetpoint.ToString(), 
+        Description = "Sets a new target setpoint for the furnace.",
+        InputSchema = AresSchemaBuilder.Empty().AddEntry(TubeFurnaceParameter.Setpoint.ToString(), AresSchemaBuilder.NumberEntry().Build()).Build()
+      },
+      new() 
+      { 
+        Name = TubeFurnaceCommand.GetCurrentTemperature.ToString(), 
+        Description = "Gets the current temperature from the furnace.",
+        OutputSchema = AresSchemaBuilder.FloatEntry().WithDescription("Current Temperature of the Furnace").Build()
+      },
+      new() 
+      { 
+        Name = TubeFurnaceCommand.SetAndWaitForSetpoint.ToString(), 
+        Description = "Sets a new setpoint and waits for the temperature to be within the given delta.",
+        InputSchema = AresSchemaBuilder.Empty()
+          .AddEntry(TubeFurnaceParameter.Setpoint.ToString(), AresSchemaBuilder.NumberEntry().Build())
+          .AddEntry(TubeFurnaceParameter.TemperatureDelta.ToString(), AresSchemaBuilder.NumberEntry().Build())
+          .AddEntry(TubeFurnaceParameter.Timeout.ToString(), AresSchemaBuilder.NumberEntry().Build())
+          .Build() 
+      }
     };
     return Task.FromResult(descriptors);
   }

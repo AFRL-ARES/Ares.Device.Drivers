@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Ares.Toolkit.Device" Version="1.6.0" />
+    <PackageReference Include="Ares.Toolkit.Device" Version="1.7.0" />
     <PackageReference Include="Ares.Toolkit.Serial" Version="1.1.0" />
     <PackageReference Include="ReactiveUI.SourceGenerators" Version="3.0.0">
       <PrivateAssets>all</PrivateAssets>

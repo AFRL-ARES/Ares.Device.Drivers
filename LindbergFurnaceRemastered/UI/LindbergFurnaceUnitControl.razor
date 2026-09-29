@@ -5,66 +5,96 @@
 @inject DialogService DialogService
 @inject TooltipService TooltipService
 
-<div class="d-flex flex-column align-items-stretch justify-content-between">
+<div class="d-flex flex-column align-items-stretch gap-2">
+  <!-- Header & Device Name -->
   <div class="d-flex">
-    <div class="h5 flex-fill">@ViewModel!.DeviceName</div>
+    <div class="h5 flex-fill m-0">@ViewModel!.DeviceName</div>
   </div>
-  <select class="form-select text-center" @bind=TemperatureUnit>
-    @foreach(var tempUnit in TemperatureUnits)
-    {
-      <option>@tempUnit</option>
-    }
-  </select>
-  @if(ViewModel!.CurrentTemperatureValue != null)
-  {
-    <input class="form-control text-center" disabled readonly value="@CurrentTemperatureDisplay" />
-  }
-  else
-  {
-    <input class="form-control text-center" disabled readonly value="Unknown Temperature" />
-  }
-  <div class="d-flex">
-    <input class="form-control text-center" placeholder="@TargetTemperatureDisplay" @bind=TargetTemperatureValue />
+
+  <!-- Temperature Unit Dropdown -->
+  <div>
+    <label class="form-label form-label-sm text-muted mb-1">Unit</label>
+    <select class="form-select text-center" @bind="TemperatureUnit">
+      @foreach(var tempUnit in TemperatureUnits)
+      {
+        <option>@tempUnit</option>
+      }
+    </select>
   </div>
-  <input class="btn text-center" type="submit" contextmenu="=" @onclick="SubmitTemperature" />
+
+  <!-- Dual Readout Boxes: Current Temperature & Current Setpoint -->
+  <div class="row g-2">
+    <div class="col-6">
+      <label class="form-label form-label-sm text-muted mb-1">Current Temp</label>
+      <input class="form-control text-center fw-bold" disabled readonly value="@CurrentTemperatureDisplay" />
+    </div>
+    <div class="col-6">
+      <label class="form-label form-label-sm text-muted mb-1">Setpoint</label>
+      <input class="form-control text-center fw-bold" disabled readonly value="@CurrentSetpointDisplay" />
+    </div>
+  </div>
+
+  <!-- New Target Temperature Input and Submit -->
+  <div class="mt-1">
+    <label class="form-label form-label-sm text-muted mb-1">New Target Setpoint</label>
+    <div class="input-group">
+      <input type="number"
+             class="form-control text-center"
+             placeholder="@TargetTemperaturePlaceholder"
+             @bind="TargetTemperatureInput"
+             @bind:event="oninput" />
+      <button class="btn btn-primary" type="button" @onclick="SubmitTemperature">Set</button>
+    </div>
+  </div>
 </div>
 
 @code {
+  private int? TargetTemperatureInput { get; set; }
 
   private string CurrentTemperatureDisplay
   {
     get
     {
-      var result = $"PV {Temperature.From(ViewModel!.CurrentTemperatureValue!.Value, ViewModel!.TemperatureUnit):#0.####}";
-      if(ViewModel!.TargetTemperatureValue is not null)
-      {
-        result += $" - SV {Temperature.From(ViewModel!.TargetTemperatureValue.Value, ViewModel!.TemperatureUnit):#0.####}";
-      }
+      if(ViewModel?.CurrentTemperatureValue is null)
+        return "Unknown";
 
-      return result;
+      var temp = Temperature.From(ViewModel.CurrentTemperatureValue.Value, ViewModel.TemperatureUnit);
+      return $"{temp.Value:#0.##} {UnitsNet.UnitAbbreviationsCache.Default.GetDefaultAbbreviation(ViewModel.TemperatureUnit)}";
     }
   }
 
-  private Task SubmitTemperature()
+  private string CurrentSetpointDisplay
   {
-    if(TargetTemperatureValue is null)
-      return Task.CompletedTask;
+    get
+    {
+      if(ViewModel?.TargetTemperatureValue is null)
+        return "Not Set";
 
-    return ViewModel!.SetTargetTemperature();
+      var temp = Temperature.From(ViewModel.TargetTemperatureValue.Value, ViewModel.TemperatureUnit);
+      return $"{temp.Value:#0.##} {UnitsNet.UnitAbbreviationsCache.Default.GetDefaultAbbreviation(ViewModel.TemperatureUnit)}";
+    }
   }
 
-  private int? TargetTemperatureValue { get; set; }
+  private string TargetTemperaturePlaceholder =>
+    $"Enter ({UnitsNet.UnitAbbreviationsCache.Default.GetDefaultAbbreviation(ViewModel!.TemperatureUnit)})";
 
-
-  private string TargetTemperatureDisplay
+  private async Task SubmitTemperature()
   {
-    get => ViewModel!.TargetTemperatureValue!.HasValue ? $"{Temperature.From(ViewModel!.TargetTemperatureValue.Value, ViewModel!.TemperatureUnit):#0.####}" : $"Target Temperature {UnitsNet.UnitAbbreviationsCache.Default.GetDefaultAbbreviation(ViewModel!.TemperatureUnit)}";
+    if(TargetTemperatureInput is null || ViewModel is null)
+      return;
+
+    // Push local staging value to ViewModel
+    ViewModel.TargetTemperatureValue = TargetTemperatureInput;
+
+    // Execute target temperature update command
+    await ViewModel.SetTargetTemperature();
+
+    // Clear local staging property so the input box resets
+    TargetTemperatureInput = null;
   }
 
-  private string[] TemperatureUnits
-  {
-    get => Temperature.Units.Select(unit => UnitsNetSetup.Default.UnitAbbreviations.GetDefaultAbbreviation(unit)).ToArray();
-  }
+  private string[] TemperatureUnits =>
+    Temperature.Units.Select(unit => UnitsNetSetup.Default.UnitAbbreviations.GetDefaultAbbreviation(unit)).ToArray();
 
   private string TemperatureUnit
   {
