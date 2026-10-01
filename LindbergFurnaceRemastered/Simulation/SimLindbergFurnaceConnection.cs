@@ -110,14 +110,20 @@ public class SimLindbergFurnaceConnection : AresSerialSimConnection, ILindbergFu
         var lrc = $"{TubeFurnaceCommandHelper.Lrc(responseBody.Select(c => (byte)c)):X2}";
         responseStr = $":{responseBody}{lrc}\r\n";
       }
-      // FC 03 / 04 or generic Read: Output current simulated temperature
+      // FC 03 / 04 or generic Read: Return the value for the requested register.
       else
       {
-        int currentTemp = furnace.GetSimulatedTemperature(RampUpRatePerSec, RampDownRatePerSec, FluctuationDelta, _random);
-        currentTemp = Math.Clamp(currentTemp, 0, 9999);
+        var registerAddressHex = payload.Substring(4, 4);
+        int registerAddress = int.Parse(registerAddressHex, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+
+        int registerValue = registerAddress == (int)Register.SP1
+          ? furnace.GetSetpoint()
+          : furnace.GetSimulatedTemperature(RampUpRatePerSec, RampDownRatePerSec, FluctuationDelta, _random);
+
+        registerValue = Math.Clamp(registerValue, 0, 9999);
 
         var responseStart = payload.Substring(0, 4);
-        var responseBody = $"{responseStart}{4:x2}{currentTemp:X4}";
+        var responseBody = $"{responseStart}{4:x2}{registerValue:X4}";
         var lrc = $"{TubeFurnaceCommandHelper.Lrc(responseBody.Select(c => (byte)c)):X2}";
         responseStr = $":{responseBody}{lrc}\r\n";
       }
@@ -159,6 +165,8 @@ public class SimLindbergFurnaceConnection : AresSerialSimConnection, ILindbergFu
 
       return (int)Math.Round(outputTemp);
     }
+
+    public int GetSetpoint() => (int)Math.Round(Setpoint);
 
     private void UpdatePhysics(double rampUpRate, double rampDownRate)
     {
