@@ -1,0 +1,160 @@
+﻿@using ReactiveUI
+@using SerialStreamingSensor.UI.State
+@implements IDisposable
+
+@if (ViewModel is null)
+{
+    <div class="streaming-sensor-message">
+        No sensor view model is available.
+    </div>
+}
+else
+{
+    <div class="device-container m-0 p-0">
+        <div class="title-row">
+            <div class="device-name">
+                @GetDisplayName()
+            </div>
+
+            <div class="@GetStatusClass()">
+                @GetStatusText()
+            </div>
+        </div>
+
+        @if (ViewModel.SensorState.LiveData.Count == 0)
+        {
+            <div class="streaming-sensor-message">
+                No live-data fields are defined.
+            </div>
+        }
+        else
+        {
+            <table class="parameter-table">
+                <tbody>
+                    @foreach (var entry in ViewModel.SensorState.LiveData)
+                    {
+                        <tr @key="entry.Name">
+                            <td class="parameter-name">
+                                @FormatName(entry.Name)
+                            </td>
+
+                            <td class="@GetValueClass(entry)">
+                                @FormatValue(entry.Value)
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+}
+
+@code {
+    private IDisposable? _viewModelSubscription;
+
+    [Parameter]
+    public DelimitedStreamSensorControlViewModel? ViewModel
+    {
+        get;
+        set;
+    }
+
+    protected override void OnParametersSet()
+    {
+        _viewModelSubscription?.Dispose();
+        _viewModelSubscription = null;
+
+        if (ViewModel is null)
+            return;
+
+        _viewModelSubscription = ViewModel
+            .Changed
+            .Subscribe(
+                _ => InvokeAsync(StateHasChanged));
+    }
+
+    private string GetDisplayName()
+    {
+        if (ViewModel is null)
+            return "Delimited Stream Sensor";
+
+        if (!string.IsNullOrWhiteSpace(
+                ViewModel.SensorState.Name))
+        {
+            return ViewModel.SensorState.Name;
+        }
+
+        return ViewModel.DeviceName;
+    }
+
+    private string GetStatusText()
+    {
+        if (ViewModel?.CapturingLiveData == true)
+            return "LIVE";
+
+        if (ViewModel?.HasValidData == true)
+            return "CONNECTED";
+
+        return "INITIALIZING";
+    }
+
+    private string GetStatusClass()
+    {
+        if (ViewModel?.CapturingLiveData == true)
+            return "device-state connected";
+
+        if (ViewModel?.HasValidData == true)
+            return "device-state connected";
+
+        return "device-state initializing";
+    }
+
+    private static string GetValueClass(
+        DelimitedStreamSensorLiveDataEntry entry)
+    {
+        return entry.Value.HasValue
+            ? "parameter-value"
+            : "parameter-value unavailable";
+    }
+
+    private static string FormatValue(double? value)
+    {
+        return value.HasValue
+            ? value.Value.ToString("G6")
+            : "—";
+    }
+
+    private static string FormatName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "Value";
+
+        var result =
+            new System.Text.StringBuilder(
+                name.Length + 8);
+
+        for (var index = 0;
+             index < name.Length;
+             index++)
+        {
+            var current = name[index];
+
+            if (index > 0 &&
+                char.IsUpper(current) &&
+                !char.IsUpper(name[index - 1]))
+            {
+                result.Append(' ');
+            }
+
+            result.Append(current);
+        }
+
+        return result.ToString();
+    }
+
+    public void Dispose()
+    {
+        _viewModelSubscription?.Dispose();
+        _viewModelSubscription = null;
+    }
+}
