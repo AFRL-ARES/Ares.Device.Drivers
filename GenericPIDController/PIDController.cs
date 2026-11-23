@@ -26,7 +26,6 @@ public sealed class PIDController : AresDevice, IPIDController
   private readonly ILogger _logger;
   private readonly BehaviorSubject<AresStruct> _stateSubject = new(new AresStruct());
   private readonly object _sync = new();
-  private readonly object _publicationGate = new();
   private double? _latestCalculatedValue;
   private Duration? _latestTimeDelta;
   private double? _latestSetpoint;
@@ -122,88 +121,88 @@ public sealed class PIDController : AresDevice, IPIDController
     if(!double.IsFinite(deltaSeconds) || deltaSeconds <= 0 || timeDelta.Nanos is < 0 or >= 1_000_000_000)
       throw new ArgumentOutOfRangeException(nameof(timeDelta), "Time delta must be a positive, normalized duration.");
 
-    lock(_publicationGate)
+    AresStruct state;
+    double output;
+    lock(_sync)
     {
-      AresStruct state;
-      double output;
-      lock(_sync)
+      ObjectDisposedException.ThrowIf(_disposed, this);
+      if(!_settingsAreValid)
+        throw new InvalidOperationException("PID controller settings are invalid.");
+
+      var error = setpoint - measurement;
+      if(!double.IsFinite(error))
+        throw new ArithmeticException("The PID error exceeded the finite numeric range.");
+
+      var rawDerivative = _latestMeasurement.HasValue ? -(measurement - _latestMeasurement.Value) / deltaSeconds : 0;
+      if(!double.IsFinite(rawDerivative))
+        throw new ArithmeticException("The PID derivative exceeded the finite numeric range.");
+
+      if(!_hasDerivative)
       {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        if(!_settingsAreValid)
-          throw new InvalidOperationException("PID controller settings are invalid.");
-
-        var error = setpoint - measurement;
-        if(!double.IsFinite(error))
-          throw new ArithmeticException("The PID error exceeded the finite numeric range.");
-
-        var rawDerivative = _latestMeasurement.HasValue
-          ? -(measurement - _latestMeasurement.Value) / deltaSeconds
-          : 0;
-        if(!double.IsFinite(rawDerivative))
-          throw new ArithmeticException("The PID derivative exceeded the finite numeric range.");
-
-        if(!_hasDerivative)
-        {
-          _filteredDerivative = rawDerivative;
-          _hasDerivative = true;
-        }
-        else
-        {
-          _filteredDerivative = DerivativeFilterCoefficient * rawDerivative
-            + (1 - DerivativeFilterCoefficient) * _filteredDerivative;
-          if(!double.IsFinite(_filteredDerivative))
-            throw new ArithmeticException("The filtered PID derivative exceeded the finite numeric range.");
-        }
-
-        // Conditional integration prevents wind-up when the output is saturated.
-        var proposedIntegral = _integral + error * deltaSeconds;
-        if(!double.IsFinite(proposedIntegral))
-          proposedIntegral = Math.CopySign(MaximumIntegralMagnitude, proposedIntegral);
-        proposedIntegral = Clamp(proposedIntegral, -MaximumIntegralMagnitude, MaximumIntegralMagnitude);
-
-        var proportionalAndDerivative = Kp * error + Kd * _filteredDerivative;
-        if(!double.IsFinite(proportionalAndDerivative))
-          throw new ArithmeticException("The PID proportional/derivative term exceeded the finite numeric range.");
-
-        var proposedOutput = proportionalAndDerivative + Ki * proposedIntegral;
-        if(double.IsNaN(proposedOutput))
-          throw new ArithmeticException("The PID output was not a number.");
-        if(double.IsInfinity(proposedOutput))
-          proposedOutput = Math.CopySign(double.MaxValue, proposedOutput);
-        output = Clamp(proposedOutput, MinOutput, MaxOutput);
-
-        var isSaturatedHigh = proposedOutput > MaxOutput;
-        var isSaturatedLow = proposedOutput < MinOutput;
-        var integralDirection = Ki * error;
-        var integrationMovesOutputDown = integralDirection < 0;
-        var integrationMovesOutputUp = integralDirection > 0;
-        if(Ki != 0 && (!isSaturatedHigh && !isSaturatedLow
-          || isSaturatedHigh && integrationMovesOutputDown
-          || isSaturatedLow && integrationMovesOutputUp))
-        {
-          _integral = proposedIntegral;
-          output = Clamp(proportionalAndDerivative + Ki * _integral, MinOutput, MaxOutput);
-        }
-
-        if(!double.IsFinite(output))
-          throw new ArithmeticException("The PID output exceeded the finite numeric range.");
-
-        _latestCalculatedValue = output;
-        _latestSetpoint = setpoint;
-        _latestMeasurement = measurement;
-        _latestTimeDelta = timeDelta.Clone();
-        state = CreateState(error, deltaSeconds);
+        _filteredDerivative = rawDerivative;
+        _hasDerivative = true;
       }
 
-      _stateSubject.OnNext(state);
-      return output;
+      else
+      {
+        _filteredDerivative = DerivativeFilterCoefficient * rawDerivative + (1 - DerivativeFilterCoefficient) * _filteredDerivative;
+        if(!double.IsFinite(_filteredDerivative))
+          throw new ArithmeticException("The filtered PID derivative exceeded the finite numeric range.");
+      }
+
+      // Conditional integration prevents wind-up when the output is saturated.
+      var proposedIntegral = _integral + error * deltaSeconds;
+      if(!double.IsFinite(proposedIntegral))
+        proposedIntegral = Math.CopySign(MaximumIntegralMagnitude, proposedIntegral);
+      proposedIntegral = Clamp(proposedIntegral, -MaximumIntegralMagnitude, MaximumIntegralMagnitude);
+
+      var proportionalAndDerivative = Kp * error + Kd * _filteredDerivative;
+      if(!double.IsFinite(proportionalAndDerivative))
+        throw new ArithmeticException("The PID proportional/derivative term exceeded the finite numeric range.");
+
+      var proposedOutput = proportionalAndDerivative + Ki * proposedIntegral;
+      if(double.IsNaN(proposedOutput))
+        throw new ArithmeticException("The PID output was not a number.");
+      if(double.IsInfinity(proposedOutput))
+        proposedOutput = Math.CopySign(double.MaxValue, proposedOutput);
+      output = Clamp(proposedOutput, MinOutput, MaxOutput);
+
+      var isSaturatedHigh = proposedOutput > MaxOutput;
+      var isSaturatedLow = proposedOutput < MinOutput;
+      var integralDirection = Ki * error;
+      var integrationMovesOutputDown = integralDirection < 0;
+      var integrationMovesOutputUp = integralDirection > 0;
+      if(Ki != 0 && (!isSaturatedHigh && !isSaturatedLow
+        || isSaturatedHigh && integrationMovesOutputDown
+        || isSaturatedLow && integrationMovesOutputUp))
+      {
+        _integral = proposedIntegral;
+        output = Clamp(proportionalAndDerivative + Ki * _integral, MinOutput, MaxOutput);
+      }
+
+      if(!double.IsFinite(output))
+        throw new ArithmeticException("The PID output exceeded the finite numeric range.");
+
+      _latestCalculatedValue = output;
+      _latestSetpoint = setpoint;
+      _latestMeasurement = measurement;
+      _latestTimeDelta = timeDelta.Clone();
+      state = CreateState(error, deltaSeconds);
     }
+
+    _stateSubject.OnNext(state);
+    return output;
+    
   }
 
   public override Task EnterSafeMode(CancellationToken ct)
   {
-    ct.ThrowIfCancellationRequested();
-    Reset();
+    if(!_disposed)
+    {
+      ct.ThrowIfCancellationRequested();
+      Reset();
+    }
+
     return Task.CompletedTask;
   }
 
@@ -275,39 +274,33 @@ public sealed class PIDController : AresDevice, IPIDController
 
   public void Reset()
   {
-    lock(_publicationGate)
+    AresStruct state;
+    lock(_sync)
     {
-      AresStruct state;
-      lock(_sync)
-      {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        state = ResetCore();
-      }
-
-      _stateSubject.OnNext(state);
+      ObjectDisposedException.ThrowIf(_disposed, this);
+      state = ResetCore();
     }
+
+    _stateSubject.OnNext(state);    
   }
 
   public override Task UpdateSettings(AresStruct settings)
   {
     ArgumentNullException.ThrowIfNull(settings);
 
-    lock(_publicationGate)
+    AresStruct state;
+    lock(_sync)
     {
-      AresStruct state;
-      lock(_sync)
-      {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        if(!TryApplySettings(settings, out var error))
-          throw new ArgumentException(error, nameof(settings));
+      ObjectDisposedException.ThrowIf(_disposed, this);
+      if(!TryApplySettings(settings, out var error))
+        throw new ArgumentException(error, nameof(settings));
 
-        _settingsAreValid = true;
-        state = ResetCore();
-      }
-
-      _stateSubject.OnNext(state);
+      _settingsAreValid = true;
+      state = ResetCore();
     }
 
+    _stateSubject.OnNext(state);
+    
     return Task.CompletedTask;
   }
 
@@ -339,19 +332,16 @@ public sealed class PIDController : AresDevice, IPIDController
 
   public ValueTask DisposeAsync()
   {
-    lock(_publicationGate)
+    lock(_sync)
     {
-      lock(_sync)
-      {
-        if(_disposed)
-          return ValueTask.CompletedTask;
+      if(_disposed)
+        return ValueTask.CompletedTask;
 
-        _disposed = true;
-        _stateSubject.OnCompleted();
-        _stateSubject.Dispose();
-      }
+      _disposed = true;
+      _stateSubject.OnCompleted();
+      _stateSubject.Dispose();
     }
-
+   
     return ValueTask.CompletedTask;
   }
 
