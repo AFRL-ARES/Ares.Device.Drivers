@@ -1,0 +1,40 @@
+# ARES Device Driver Manifest
+# Target: Generic PID Controller
+
+device_type_name: "Generic PID Controller"
+driver_id: "generic_pid_controller_v1"
+version: "1.0.0"
+connection_type: "None"
+assembly_name: "GenericPIDController.dll"
+
+# Settings required when adding the controller through the ARES UI
+settings:
+  - key: "Kp"
+    display_name: "Proportional Gain"
+    type: "number"
+    description: "Proportional gain applied to the current control error."
+
+  - key: "Ki"
+    display_name: "Integral Gain"
+    type: "number"
+    description: "Integral gain applied to the accumulated control error."
+
+  - key: "Kd"
+    display_name: "Derivative Gain"
+    type: "number"
+    description: "Derivative gain applied to the measurement rate of change."
+
+  - key: "MinOutput"
+    display_name: "Minimum Output"
+    type: "number"
+    description: "Lower inclusive limit applied to the controller output."
+
+  - key: "MaxOutput"
+    display_name: "Maximum Output"
+    type: "number"
+    description: "Upper inclusive limit applied to the controller output."
+
+  - key: "DerivativeFilterCoefficient"
+    display_name: "Derivative Filter Coefficient"
+    type: "number"
+    description: "Weight of the newest derivative sample, from 0 (fully filtered) to 1 (unfiltered)."

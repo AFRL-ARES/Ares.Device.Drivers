@@ -2,6 +2,7 @@
   <Project Path="AlicatMFCRemastered/AlicatMFCRemastered.csproj" />
   <Project Path="ChemyxPumpPlugin/ChemyxPumpPlugin.csproj" />
   <Project Path="FlirCM3Remastered/FlirCM3Remastered.csproj" />
+  <Project Path="GenericPIDController/GenericPIDController.csproj" Id="2027229c-8b33-497d-9ade-4e6004573c1e" />
   <Project Path="HerkulexDRS/HerkulexDRS.csproj" />
   <Project Path="LindbergFurnaceRemastered/LindbergFurnaceRemastered.csproj" />
   <Project Path="SyringePumpNE1000Remastered/SyringePumpNE1000Remastered.csproj" />
