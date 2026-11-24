@@ -72,17 +72,6 @@ public sealed class PIDController : AresDevice, IPIDController
     _stateSubject.OnNext(CreateInitialState());
   }
 
-  public override IObservable<AresStruct> StateStream { get; }
-
-  private double Kp { get; set; }
-  private double Ki { get; set; }
-  private double Kd { get; set; }
-  private double MinOutput { get; set; }
-  private double MaxOutput { get; set; }
-
-  // One uses the latest raw derivative; zero retains the previous filtered value.
-  private double DerivativeFilterCoefficient { get; set; } = DefaultDerivativeFilterCoefficient;
-
   public override Task<bool> Activate(CancellationToken ct)
   {
     ObjectDisposedException.ThrowIf(_disposed, this);
@@ -154,17 +143,20 @@ public sealed class PIDController : AresDevice, IPIDController
       var proposedIntegral = _integral + error * deltaSeconds;
       if(!double.IsFinite(proposedIntegral))
         proposedIntegral = Math.CopySign(MaximumIntegralMagnitude, proposedIntegral);
-      proposedIntegral = Clamp(proposedIntegral, -MaximumIntegralMagnitude, MaximumIntegralMagnitude);
 
+      proposedIntegral = Clamp(proposedIntegral, -MaximumIntegralMagnitude, MaximumIntegralMagnitude);
       var proportionalAndDerivative = Kp * error + Kd * _filteredDerivative;
+
       if(!double.IsFinite(proportionalAndDerivative))
         throw new ArithmeticException("The PID proportional/derivative term exceeded the finite numeric range.");
 
       var proposedOutput = proportionalAndDerivative + Ki * proposedIntegral;
       if(double.IsNaN(proposedOutput))
         throw new ArithmeticException("The PID output was not a number.");
+
       if(double.IsInfinity(proposedOutput))
         proposedOutput = Math.CopySign(double.MaxValue, proposedOutput);
+
       output = Clamp(proposedOutput, MinOutput, MaxOutput);
 
       var isSaturatedHigh = proposedOutput > MaxOutput;
@@ -172,9 +164,7 @@ public sealed class PIDController : AresDevice, IPIDController
       var integralDirection = Ki * error;
       var integrationMovesOutputDown = integralDirection < 0;
       var integrationMovesOutputUp = integralDirection > 0;
-      if(Ki != 0 && (!isSaturatedHigh && !isSaturatedLow
-        || isSaturatedHigh && integrationMovesOutputDown
-        || isSaturatedLow && integrationMovesOutputUp))
+      if(Ki != 0 && (!isSaturatedHigh && !isSaturatedLow || isSaturatedHigh && integrationMovesOutputDown || isSaturatedLow && integrationMovesOutputUp))
       {
         _integral = proposedIntegral;
         output = Clamp(proportionalAndDerivative + Ki * _integral, MinOutput, MaxOutput);
@@ -191,8 +181,7 @@ public sealed class PIDController : AresDevice, IPIDController
     }
 
     _stateSubject.OnNext(state);
-    return output;
-    
+    return output; 
   }
 
   public override Task EnterSafeMode(CancellationToken ct)
@@ -458,4 +447,14 @@ public sealed class PIDController : AresDevice, IPIDController
 
   private static double Clamp(double value, double minimum, double maximum)
     => Math.Min(Math.Max(value, minimum), maximum);
+
+  public override IObservable<AresStruct> StateStream { get; }
+  private double Kp { get; set; }
+  private double Ki { get; set; }
+  private double Kd { get; set; }
+  private double MinOutput { get; set; }
+  private double MaxOutput { get; set; }
+
+  // One uses the latest raw derivative; zero retains the previous filtered value.
+  private double DerivativeFilterCoefficient { get; set; } = DefaultDerivativeFilterCoefficient;
 }
